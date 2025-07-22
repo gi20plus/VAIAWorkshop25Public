@@ -41,6 +41,22 @@ def schroeder_backward_int(
     # Compute cumulative sum (integration) over the reversed array
     # Flip the result back to original order
 
+     # Flip the input array to prepare for backward integration
+    x_flipped = x[::-1]
+
+    # Square the signal
+    x_squared = x_flipped ** 2
+
+    # Subtract noise power if requested
+    if subtract_noise:
+        x_squared = np.maximum(x_squared - noise_level, 0.0)
+
+    # Compute cumulative sum (integration) over the reversed array
+    out = np.cumsum(x_squared)
+
+    # Flip the result back to original order
+    out = out[::-1]
+
     # Normalize the energy if requested
     if energy_norm:
         norm_vals = np.max(out, keepdims=True, axis=-1)  # per channel
@@ -101,9 +117,17 @@ def compute_edc(
 
     ### WRITE YOUR CODE HERE ###
     # Compute EDCs using Schroeder backward integration
-    # Convert to dB scale
 
-    return out
+    edc, _ = schroeder_backward_int(
+        out,
+        energy_norm=energy_norm,
+        subtract_noise=subtract_noise,
+        noise_level=noise_level
+    )
+    # Convert to dB scale
+    edc_db = 10 * np.log10(edc + 1e-12)
+
+    return edc_db
 
 
 def estimate_rt60(
